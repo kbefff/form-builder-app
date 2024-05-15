@@ -69,9 +69,15 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const handleInputChange = (formId: string, fieldLabel: string, value: any) => {
     setFormData((prev) => {
-      const updatedData = prev.map((entry) =>
-        entry.formId === formId ? { ...entry, data: { ...entry.data, [fieldLabel]: value } } : entry
-      );
+      let updatedData = [...prev];
+      const dataIndex = updatedData.findIndex((data) => data.formId === formId);
+
+      if (dataIndex === -1) {
+        updatedData.push({ formId, data: { [fieldLabel]: value } });
+      } else {
+        updatedData[dataIndex].data[fieldLabel] = value;
+      }
+
       localStorage.setItem('formData', JSON.stringify(updatedData));
       return updatedData;
     });
@@ -105,14 +111,15 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return false;
     }
 
-    const entryIndex = formData.findIndex((data) => data.formId === formId);
-    if (entryIndex === -1) {
-      setFormData((prev) => {
+    setFormData((prev) => {
+      const entryIndex = prev.findIndex((data) => data.formId === formId);
+      if (entryIndex === -1) {
         const updatedData = [...prev, { formId, data: {} }];
         localStorage.setItem('formData', JSON.stringify(updatedData));
         return updatedData;
-      });
-    }
+      }
+      return prev;
+    });
 
     return true;
   };
@@ -121,6 +128,10 @@ export const FormProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updatedForms = forms.filter((form) => form.id !== id);
     setForms(updatedForms);
     localStorage.setItem('forms', JSON.stringify(updatedForms));
+
+    const updatedData = formData.filter((data) => data.formId !== id);
+    setFormData(updatedData);
+    localStorage.setItem('formData', JSON.stringify(updatedData));
   };
 
   const clearAllData = () => {
